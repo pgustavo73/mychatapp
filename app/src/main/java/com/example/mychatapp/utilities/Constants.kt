@@ -38,8 +38,7 @@ object Constants {
     fun getRemoteMsgHeaders(): HashMap<String, String>? {
         if (remoteMsgHeaders == null) {
             remoteMsgHeaders = HashMap()
-            remoteMsgHeaders!![REMOTE_MSG_AUTHORIZATION] =
-                "key="
+            remoteMsgHeaders!![REMOTE_MSG_AUTHORIZATION] = "key=AAAAwG9FkIY:APA91bHzwP4IRb40xCkZTj41XF8NDTfGbGh5qE7i_2-ZpCM_VYDym8mQcaQzkXaJ3Bs5keMxRioEy3Y-JU2fJTjpoGXcXDNoydCRuCbWzlwTZTTQQP2XZm9ZiEDF4MA95t6h7YpLTyvv"
             remoteMsgHeaders!![REMOTE_MSG_CONTENT_TYPE] = "application/json"
         }
         return remoteMsgHeaders
