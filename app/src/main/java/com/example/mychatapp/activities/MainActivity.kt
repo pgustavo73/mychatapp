@@ -161,5 +161,4 @@ class MainActivity : BaseActivity(), ConversionListener {
         startActivity(intent)
     }
 
-
 }

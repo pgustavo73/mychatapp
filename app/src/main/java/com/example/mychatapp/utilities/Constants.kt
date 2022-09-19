@@ -25,6 +25,7 @@ object Constants {
     const val KEY_RECEIVER_IMAGE = "receiverImage"
     const val KEY_LAST_MESSAGE = "lastMessage"
     const val KEY_AVAILABILITY = "availability"
+    const val KEY_IMAGE_MESSAGE = "encodedImage"
     const val REMOTE_MSG_AUTHORIZATION = "Authorization"
     const val REMOTE_MSG_CONTENT_TYPE = "Content-Type"
     const val REMOTE_MSG_DATA = "data"

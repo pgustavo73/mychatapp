@@ -1,14 +1,21 @@
 package com.example.mychatapp.adapters
 
+
+import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.example.mychatapp.activities.ChatActivity
+import com.example.mychatapp.activities.ImageActivity
 import com.example.mychatapp.databinding.ItemContainerReceivedMessageBinding
 import com.example.mychatapp.databinding.ItemContainerSentMessageBinding
 import com.example.mychatapp.models.ChatMessage
-import com.example.mychatapp.activities.ChatActivity as ChatActivity
+import com.example.mychatapp.utilities.getBitmapFromEncodedString
+
 
 class ChatAdapter(
     var chatMessages: MutableList<ChatMessage>, var senderId: String,
@@ -18,9 +25,14 @@ class ChatAdapter(
     val VIEW_TYPE_SENT = 1
     val VIEW_TYPE__RECEIVED = 2
     private var isReceiverAvailable: Boolean = false
+    lateinit var imageMessages: Bitmap
 
     fun setReceiverProfileImage(bitmap: Bitmap) {
         receiverProfileImage = bitmap
+    }
+
+    fun setImageMessage(bitmap: Bitmap) {
+        imageMessages = bitmap
     }
 
     inner class SentMessageViewHolder(itemContainerSentMessageBinding: ItemContainerSentMessageBinding) :
@@ -30,6 +42,17 @@ class ChatAdapter(
         fun setData(chatMessages: ChatMessage) {
             binding.textMessage.text = chatMessages.message
             binding.textDateTime.text = chatMessages.dateTime
+            if (chatMessages.message == "") {
+                binding.textMessage.visibility = View.GONE
+                binding.imageMessage.visibility = View.VISIBLE
+                setImageMessage(getBitmapFromEncodedString(chatMessages.encodedImage)!!)
+                binding.imageMessage.setImageBitmap(imageMessages)
+                binding.container.setOnClickListener{ ChatMessage ->
+                    val intent = Intent(ChatMessage.context, ImageActivity::class.java)
+                    intent.putExtra("Image",chatMessages.encodedImage)
+                    ChatMessage.context.startActivity(intent)
+                }
+            }
         }
 
     }
@@ -44,6 +67,17 @@ class ChatAdapter(
             binding.textDateTime.text = chatMessages.dateTime
             if(receiverProfileImage != null) {
                 binding.imageProfile.setImageBitmap(receiverProfileImage)
+            }
+            if (chatMessages.message == "") {
+                binding.textMessage.visibility = View.GONE
+                binding.imageMessageChat.visibility = View.VISIBLE
+                setImageMessage(getBitmapFromEncodedString(chatMessages.encodedImage)!!)
+                binding.imageMessageChat.setImageBitmap(imageMessages)
+                binding.container.setOnClickListener{ ChatMessage ->
+                    val intent = Intent(ChatMessage.context, ImageActivity::class.java)
+                    intent.putExtra("Image",chatMessages.encodedImage)
+                    ChatMessage.context.startActivity(intent)
+                }
             }
         }
     }

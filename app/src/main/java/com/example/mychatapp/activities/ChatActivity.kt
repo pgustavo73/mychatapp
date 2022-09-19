@@ -1,31 +1,42 @@
 package com.example.mychatapp.activities
 
 import android.annotation.SuppressLint
+import android.app.ProgressDialog
+import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.Image
+import android.net.Uri
 import android.os.Bundle
 import android.util.Base64
+import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import com.example.mychatapp.adapters.ChatAdapter
 import com.example.mychatapp.databinding.ActivityChatBinding
 import com.example.mychatapp.models.ChatMessage
 import com.example.mychatapp.models.User
+import com.example.mychatapp.network.ApiClient.client
 import com.example.mychatapp.network.ApiService
 import com.example.mychatapp.utilities.Constants
 import com.example.mychatapp.utilities.SharedPreference
+import com.example.mychatapp.utilities.getBitmapFromEncodedString
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.firestore.*
 import com.google.firebase.firestore.EventListener
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import java.text.SimpleDateFormat
-import java.util.*
-import com.example.mychatapp.network.ApiClient.client
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import java.io.ByteArrayOutputStream
+import java.security.AccessController.getContext
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.ArrayList
 
 
 class ChatActivity : BaseActivity() {
@@ -37,6 +48,12 @@ class ChatActivity : BaseActivity() {
     private lateinit var dataBase: FirebaseFirestore
     private var conversationId: String? = null
     private var isReceiverAvailable: Boolean = false
+    var imageUri: Uri? = null
+    lateinit var progressDialog: ProgressDialog
+    private val PICK_IMAGES_CODES = 100
+    private var images: ArrayList<Uri?>? = null
+    private var encodedImage: String? = null
+
 
 
 
@@ -44,6 +61,7 @@ class ChatActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityChatBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        images = ArrayList()
         loadReceiverDetails()
         setListener ()
         init()
@@ -56,7 +74,7 @@ class ChatActivity : BaseActivity() {
         chatAdapter = ChatAdapter(
             chatMessages,
             sharedPreference.getString(Constants.KEY_USER_ID)!!,
-            getBitmapFromEncodedString(receiverUser.image)!!
+            getBitmapFromEncodedString(receiverUser.image)!!,
         )
         binding.chatRecyclerView.setAdapter(chatAdapter)
         dataBase = FirebaseFirestore.getInstance()
@@ -67,11 +85,18 @@ class ChatActivity : BaseActivity() {
         val message = HashMap<String, Any>()
         message[Constants.KEY_SENDER_ID] = sharedPreference.getString(Constants.KEY_USER_ID)!!
         message[Constants.KEY_RECEIVER_ID] = receiverUser.id
+        if (encodedImage != null) {
+            message[Constants.KEY_IMAGE_MESSAGE] = encodedImage!!
+        }
         message[Constants.KEY_MESSAGE] = binding.inputMessage.text.toString()
         message[Constants.KEY_TIMESTAMP] = Date()
         dataBase.collection(Constants.KEY_COLLECTION_CHAT).add(message)
         if (conversationId != null) {
-            updateConversion(binding.inputMessage.text.toString())
+            if (encodedImage != null) {
+                updateConversion("\uD83D\uDCF8 Photo")
+            }else {
+                updateConversion(binding.inputMessage.text.toString())
+            }
         } else {
             val conversion = HashMap<String, Any>()
                 conversion.put(Constants.KEY_SENDER_ID, sharedPreference.getString(Constants.KEY_USER_ID)!!)
@@ -80,7 +105,11 @@ class ChatActivity : BaseActivity() {
                 conversion.put(Constants.KEY_RECEIVER_ID, receiverUser.id)
                 conversion.put(Constants.KEY_RECEIVER_NAME, receiverUser.name)
                 conversion.put(Constants.KEY_RECEIVER_IMAGE, receiverUser.image)
-                conversion.put(Constants.KEY_LAST_MESSAGE, binding.inputMessage.text.toString())
+            if (encodedImage != null) {
+                conversion.put(Constants.KEY_LAST_MESSAGE, "\uD83D\uDCF8 Photo")
+            }
+            else { conversion.put(Constants.KEY_LAST_MESSAGE, binding.inputMessage.text.toString())
+            }
                 conversion.put(Constants.KEY_TIMESTAMP, Date())
                 addConversion(conversion)
         }
@@ -199,6 +228,10 @@ class ChatActivity : BaseActivity() {
                             .getString(Constants.KEY_RECEIVER_ID)!!
                         chatMessage.message = documentChange.document
                             .getString(Constants.KEY_MESSAGE)!!
+                        if (chatMessage.message == ""){
+                            chatMessage.encodedImage = documentChange.document
+                                .getString(Constants.KEY_IMAGE_MESSAGE)!!
+                        }
                         chatMessage.dateTime = getReadableDateTime(documentChange.document.getDate(Constants.KEY_TIMESTAMP)!!)
                         chatMessage.dateObject = documentChange.document
                             .getDate(Constants.KEY_TIMESTAMP)!!
@@ -220,24 +253,16 @@ class ChatActivity : BaseActivity() {
             }
         }
 
-
-    private fun getBitmapFromEncodedString(encodedImage: String): Bitmap? {
-        if(encodedImage != null) {
-            val bytes: ByteArray = Base64.decode(encodedImage, Base64.DEFAULT)
-            return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-        } else {
-            return null
-        }
-    }
-
     private fun loadReceiverDetails() {
         receiverUser = (intent.getSerializableExtra(Constants.KEY_USER) as User)
         binding.textName.text = receiverUser.name
     }
 
+
     private fun setListener () {
         binding.imageBack.setOnClickListener { v-> onBackPressed()}
         binding.layoutSend.setOnClickListener { v -> sendMessage()}
+        binding.layoutAttached.setOnClickListener { v -> pickImage()}
     }
 
     private fun getReadableDateTime(date: Date): String {
@@ -288,6 +313,36 @@ class ChatActivity : BaseActivity() {
                 conversationId = documentSnapshot.id
             }
         }
+
+
+    private fun pickImage() {
+        val intent = Intent()
+        intent.type = ("image/*")
+        intent.action = Intent.ACTION_GET_CONTENT
+        startActivityForResult(Intent.createChooser(intent, "Select Image"),100)
+
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 100 && data != null && data.getData() != null) {
+            imageUri = data.data
+            val imageStream = contentResolver.openInputStream(imageUri!!)
+            val bitmap = BitmapFactory.decodeStream(imageStream)
+            encodedImage = encodeImage(bitmap)!!
+            sendMessage()
+        }
+    }
+
+    private fun encodeImage(bitmap: Bitmap): String? {
+        val previewWidth = 150
+        val previewHeight = bitmap.height * previewWidth / bitmap.width
+        val previewBitmap = Bitmap.createScaledBitmap(bitmap, previewWidth, previewHeight, false)
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        previewBitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
+        val bytes = byteArrayOutputStream.toByteArray()
+        return Base64.encodeToString(bytes, Base64.DEFAULT)
+    }
 
     override fun onResume() {
         super.onResume()

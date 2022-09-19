@@ -12,5 +12,6 @@ class ChatMessage {
     lateinit var conversionId: String
     lateinit var conversionName: String
     lateinit var conversionImage: String
+    lateinit var encodedImage: String
 
 }
