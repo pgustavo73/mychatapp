@@ -24,6 +24,11 @@ open class BaseActivity : AppCompatActivity() {
         documentReference.update(Constants.KEY_AVAILABILITY, 0)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        documentReference.update(Constants.KEY_AVAILABILITY, 0)
+    }
+
     override fun onResume() {
         super.onResume()
         documentReference.update(Constants.KEY_AVAILABILITY, 1)

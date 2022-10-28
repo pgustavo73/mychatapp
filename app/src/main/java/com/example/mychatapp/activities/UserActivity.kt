@@ -3,6 +3,7 @@ package com.example.mychatapp.activities
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import androidx.core.content.ContentProviderCompat
 import com.example.mychatapp.adapters.UsersAdapter
 import com.example.mychatapp.databinding.ActivityUserBinding
 import com.example.mychatapp.listeners.UserListener

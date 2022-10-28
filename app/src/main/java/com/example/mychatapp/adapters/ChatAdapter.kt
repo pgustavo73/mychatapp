@@ -1,10 +1,8 @@
 package com.example.mychatapp.adapters
 
 
-import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,6 +12,8 @@ import com.example.mychatapp.activities.ImageActivity
 import com.example.mychatapp.databinding.ItemContainerReceivedMessageBinding
 import com.example.mychatapp.databinding.ItemContainerSentMessageBinding
 import com.example.mychatapp.models.ChatMessage
+import com.example.mychatapp.models.User
+import com.example.mychatapp.utilities.Constants
 import com.example.mychatapp.utilities.getBitmapFromEncodedString
 
 
@@ -41,15 +41,20 @@ class ChatAdapter(
 
         fun setData(chatMessages: ChatMessage) {
             binding.textMessage.text = chatMessages.message
+            binding.container.setOnLongClickListener { ChatMessage ->
+                val cActivity = ChatActivity()
+                cActivity.showDialogOne(ChatMessage.context, chatMessages)
+                return@setOnLongClickListener true
+            }
             binding.textDateTime.text = chatMessages.dateTime
             if (chatMessages.message == "") {
                 binding.textMessage.visibility = View.GONE
                 binding.imageMessage.visibility = View.VISIBLE
                 setImageMessage(getBitmapFromEncodedString(chatMessages.encodedImage)!!)
                 binding.imageMessage.setImageBitmap(imageMessages)
-                binding.container.setOnClickListener{ ChatMessage ->
+                binding.imageMessage.setOnClickListener{ ChatMessage ->
                     val intent = Intent(ChatMessage.context, ImageActivity::class.java)
-                    intent.putExtra("Image",chatMessages.encodedImage)
+                    intent.putExtra("Image",chatMessages.imageId)
                     ChatMessage.context.startActivity(intent)
                 }
             }
@@ -57,7 +62,7 @@ class ChatAdapter(
 
     }
 
-     inner class ReceivedMessageViewHolder(itemContainerReceivedMessageBinding: ItemContainerReceivedMessageBinding) :
+    inner class ReceivedMessageViewHolder(itemContainerReceivedMessageBinding: ItemContainerReceivedMessageBinding) :
         RecyclerView.ViewHolder(itemContainerReceivedMessageBinding.root) {
         val binding = itemContainerReceivedMessageBinding
 
@@ -73,9 +78,9 @@ class ChatAdapter(
                 binding.imageMessageChat.visibility = View.VISIBLE
                 setImageMessage(getBitmapFromEncodedString(chatMessages.encodedImage)!!)
                 binding.imageMessageChat.setImageBitmap(imageMessages)
-                binding.container.setOnClickListener{ ChatMessage ->
+                binding.imageMessageChat.setOnClickListener{ ChatMessage ->
                     val intent = Intent(ChatMessage.context, ImageActivity::class.java)
-                    intent.putExtra("Image",chatMessages.encodedImage)
+                    intent.putExtra("Image",chatMessages.imageId)
                     ChatMessage.context.startActivity(intent)
                 }
             }
@@ -125,5 +130,4 @@ class ChatAdapter(
             return VIEW_TYPE__RECEIVED
         }
     }
-
 }

@@ -75,4 +75,5 @@ dependencies {
     //splashScreen
     implementation 'androidx.core:core-splashscreen:1.0.0-beta01'
 
+    implementation 'com.zolad:zoominimageview:1.0.0'
 }

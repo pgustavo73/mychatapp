@@ -3,6 +3,7 @@ package com.example.mychatapp.utilities
 import java.util.HashMap
 
 object Constants {
+    const val KEY_IMAGE_NAME = "imageId"
     const val KEY_COLLECTION_USERS = "users"
     const val KEY_NAME = "name"
     const val KEY_EMAIL = "email"
