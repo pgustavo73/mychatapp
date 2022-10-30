@@ -6,6 +6,6 @@ A few weeks ago I found an excellent tutorial on you tube made by Chirag Kachhad
 
 <img src="./image/telas.jpg" />
 
+I made some improvements in my own chat app now we can edit messages end delete them and send pictures and when we see this picture we can zoom in and zoom out with finger pincers and download these pictures. Was amazing what I can learn through the process. I will continually add new features to this app feel free to give me suggestions and tips or even criticisms.
 
-
-
+<img src="./image/telas1.jpg" />
